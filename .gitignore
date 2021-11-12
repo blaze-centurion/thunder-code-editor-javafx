@@ -1,0 +1,7 @@
+src/sample/example
+src/sample/editor/X.java
+Settings.properties
+out
+.idea
+TextEditor.iml
+src/sample/editor/css/java-keywords.css

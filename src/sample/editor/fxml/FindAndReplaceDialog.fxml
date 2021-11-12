@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.Cursor?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.text.Font?>
+
+<HBox fx:id="container" alignment="CENTER_LEFT" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="41.0" prefWidth="490.0" style="-fx-background-color: #21222C; -fx-border-color: #454545; -fx-border-width: 0 0 0 7px;" stylesheets="@../css/style.css" xmlns="http://javafx.com/javafx/16" xmlns:fx="http://javafx.com/fxml/1" fx:controller="sample.editor.controller.FindAndReplaceDialogController">
+   <children>
+      <HBox alignment="CENTER" onMouseClicked="#toggleReplace" prefHeight="41.0" prefWidth="37.0" styleClass="hover_white">
+         <children>
+            <FontAwesomeIcon fill="WHITE" glyphName="CHEVRON_RIGHT" />
+         </children>
+         <HBox.margin>
+            <Insets right="11.0" />
+         </HBox.margin>
+      </HBox>
+      <VBox alignment="CENTER_LEFT" prefWidth="431.0" HBox.hgrow="ALWAYS">
+         <children>
+            <HBox fx:id="findBox" alignment="CENTER_LEFT" prefWidth="200.0" translateY="14.0">
+               <children>
+                  <TextField fx:id="findInput" onAction="#find" prefHeight="32.0" prefWidth="245.0" promptText="Find" styleClass="find_input">
+                     <HBox.margin>
+                        <Insets right="7.0" />
+                     </HBox.margin>
+                  </TextField>
+                  <Label fx:id="currIndexLabel" text="0" textFill="WHITE">
+                     <font>
+                        <Font size="16.0" />
+                     </font>
+                     <HBox.margin>
+                        <Insets right="2.0" />
+                     </HBox.margin>
+                  </Label>
+                  <Label text="of" textFill="WHITE">
+                     <font>
+                        <Font size="16.0" />
+                     </font>
+                     <HBox.margin>
+                        <Insets right="2.0" />
+                     </HBox.margin>
+                  </Label>
+                  <Label fx:id="totalIndexLabel" text="0" textFill="WHITE">
+                     <font>
+                        <Font size="16.0" />
+                     </font>
+                     <HBox.margin>
+                        <Insets left="2.0" />
+                     </HBox.margin>
+                  </Label>
+                  <HBox alignment="CENTER_RIGHT" prefHeight="41.0" prefWidth="124.0" HBox.hgrow="ALWAYS">
+                     <children>
+                        <Button mnemonicParsing="false" onAction="#prevWord" style="-fx-background-color: none;">
+                           <graphic>
+                              <FontAwesomeIcon fill="WHITE" glyphName="ARROW_UP" size="19px" />
+                           </graphic>
+                           <cursor>
+                              <Cursor fx:constant="HAND" />
+                           </cursor>
+                        </Button>
+                        <Button layoutX="145.0" layoutY="16.0" mnemonicParsing="false" onAction="#nextWord" style="-fx-background-color: none;">
+                           <graphic>
+                              <FontAwesomeIcon fill="WHITE" glyphName="ARROW_DOWN" size="19px" />
+                           </graphic>
+                           <cursor>
+                              <Cursor fx:constant="HAND" />
+                           </cursor>
+                        </Button>
+                        <Button layoutX="145.0" layoutY="16.0" mnemonicParsing="false" onAction="#close" style="-fx-background-color: none;">
+                           <graphic>
+                              <FontAwesomeIcon fill="WHITE" glyphName="CLOSE" size="19px" />
+                           </graphic>
+                           <cursor>
+                              <Cursor fx:constant="HAND" />
+                           </cursor>
+                        </Button>
+                     </children>
+                     <padding>
+                        <Insets right="5.0" />
+                     </padding>
+                  </HBox>
+               </children>
+            </HBox>
+            <HBox fx:id="replaceBox" alignment="CENTER_LEFT" layoutX="10.0" layoutY="10.0" prefHeight="100.0" prefWidth="200.0" translateY="42.0" visible="false">
+               <children>
+                  <TextField fx:id="replaceInput" prefHeight="32.0" prefWidth="245.0" promptText="Replace" styleClass="find_input">
+                     <HBox.margin>
+                        <Insets right="7.0" />
+                     </HBox.margin>
+                  </TextField>
+                  <Button mnemonicParsing="false" onAction="#replace" prefWidth="75.0" style="-fx-background-color: #33343B;" text="Replace" textFill="WHITE">
+                     <HBox.margin>
+                        <Insets right="4.0" />
+                     </HBox.margin>
+                  </Button>
+                  <Button layoutX="250.0" layoutY="15.0" mnemonicParsing="false" onAction="#replaceAll" style="-fx-background-color: #33343B;" text="Replace All" textFill="WHITE" />
+               </children>
+            </HBox>
+         </children>
+         <HBox.margin>
+            <Insets top="4.0" />
+         </HBox.margin>
+      </VBox>
+   </children>
+</HBox>
