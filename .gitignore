@@ -5,3 +5,4 @@ out
 .idea
 TextEditor.iml
 src/sample/editor/css/java-keywords.css
+.DS_STORE
