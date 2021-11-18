@@ -1,6 +1,7 @@
 package sample.editor.controller;
 
 import javafx.geometry.Pos;
+import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.control.TreeItem;
 import javafx.scene.layout.HBox;
@@ -10,19 +11,14 @@ import javafx.stage.Stage;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.HashMap;
 
 public class CommandPalletDialogBox extends Popup {
     Stage window;
     TreeItem<String> selectedTreeItem;
-    HashMap<String, String> files;
-    HashMap<String, String> directories;
 
-    public CommandPalletDialogBox(Stage window, TreeItem<String> selectedTreeItem, HashMap<String, String> files, HashMap<String, String> directories) {
+    public CommandPalletDialogBox(Stage window, TreeItem<String> selectedTreeItem) {
         this.window = window;
         this.selectedTreeItem = selectedTreeItem;
-        this.files = files;
-        this.directories = directories;
         setAutoHide(true);
         setHideOnEscape(true);
     }
@@ -86,13 +82,7 @@ public class CommandPalletDialogBox extends Popup {
         File newFile = new File(path.substring(0, path.length()-file.getName().length()) + renameField.getText());
         if (file.renameTo(newFile)) {
             selectedTreeItem.setValue(newFile.getName());
-            if (file.isDirectory()) {
-                directories.remove(selectedTreeItem.getValue());
-                directories.put(newFile.getName(), newFile.getAbsolutePath());
-            } else {
-                files.remove(selectedTreeItem.getValue());
-                files.put(newFile.getName(), newFile.getAbsolutePath());
-            }
+            selectedTreeItem.getGraphic().setId(newFile.getAbsolutePath());
             hide();
         } else {
             System.out.println("Files already exists.");
@@ -103,8 +93,11 @@ public class CommandPalletDialogBox extends Popup {
         File file = new File(dir.getAbsolutePath() + "\\" + field.getText());
         try {
             if (file.createNewFile()) {
-                selectedTreeItem.getChildren().add(new TreeItem<>(file.getName()));
-                files.put(file.getName(), file.getAbsolutePath());
+                TreeItem<String> item = new TreeItem<>(file.getName());
+                Label label = new Label();
+                label.setId(file.getAbsolutePath());
+                item.setGraphic(label);
+                selectedTreeItem.getChildren().add(item);
                 hide();
             } else {
                 System.out.println("Files already exists");
@@ -117,8 +110,11 @@ public class CommandPalletDialogBox extends Popup {
     private void newFolder(File dir, TextField field) {
         File file = new File(dir.getAbsolutePath() + "\\" + field.getText());
         if (file.mkdir()) {
-            selectedTreeItem.getChildren().add(new TreeItem<>(file.getName()));
-            directories.put(file.getName(), file.getAbsolutePath());
+            TreeItem<String> item = new TreeItem<>(file.getName());
+            Label label = new Label();
+            label.setId(file.getAbsolutePath());
+            item.setGraphic(label);
+            selectedTreeItem.getChildren().add(item);
             hide();
         } else {
             System.out.println("Files already exists");

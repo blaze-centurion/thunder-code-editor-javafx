@@ -139,8 +139,6 @@
 
 .virtualized-scroll-pane > .scroll-bar:vertical, .virtualized-scroll-pane > .scroll-bar:horizontal {
     -fx-background-color: #282A36;
-    -fx-border-color: #191A21;
-    -fx-border-width: 0 0 0 1px;
     -fx-pref-width: 18px;
     -fx-pref-height: 18px;
 }
@@ -184,10 +182,9 @@
     -fx-border-insets: 0;
 }
 .menu .context-menu {
-    -fx-padding: 1 1 1 1;
+    -fx-padding: 0;
     -fx-background-color: transparent;
 }
-
 
 .tree-cell
 {
@@ -204,15 +201,17 @@
 
 .find
 {
-    -rtfx-background-color: #5E5F68;
+    -rtfx-background-color: #5E5F68 !important;
+    -fx-background-color: #5E5F68 !important;
+    -fx-text-fill: #5E5F68 !important;
 }
 .findActive
 {
-    -rtfx-background-color: #A07C61;
+    -rtfx-background-color: #A07C61 !important;
 }
 .removeFind
 {
-    -rtfx-background-color: none;
+    -rtfx-background-color: none !important;
 }
 
 
@@ -270,4 +269,21 @@
     -fx-text-fill: #fff;
     -fx-border-color: #A393F9;
     -fx-border-width: 1px;
+}
+
+.list-view {
+    -fx-background-color: #21222C;
+    -fx-padding: 0;
+}
+.list-cell {
+    -fx-background-color: #21222C;
+    -fx-text-fill: #fff;
+    -fx-font-size: 15px;
+    -fx-font-family: 'JetBrains Mono' !important;
+}
+.list-view .list-cell:selected {
+    -fx-background-color: #44475A;
+}
+.list-cell:empty {
+    -fx-opacity: 0;
 }

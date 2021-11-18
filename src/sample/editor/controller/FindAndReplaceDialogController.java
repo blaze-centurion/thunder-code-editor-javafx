@@ -19,7 +19,6 @@ public class FindAndReplaceDialogController {
     private HBox findBox, replaceBox, container;
 
     private StyleClassedTextArea codeArea;
-
     private Popup popup;
     private Utils utils = new Utils();
     ArrayList<ArrayList<Integer>> coordinateList = new ArrayList<>();
@@ -65,16 +64,11 @@ public class FindAndReplaceDialogController {
     void replace() {
         codeArea.replaceText(coordinateList.get(currWordIndex.get()).get(0), coordinateList.get(currWordIndex.get()).get(1), replaceInput.getText());
         utils.highlightText(findInput, coordinateList, currWordIndex, codeArea);
-
-//        System.out.println(coordinateList.get(currWordIndex.get()).get(0));
-//        System.out.println(coordinateList.get(currWordIndex.get()).get(1));
-////        if (currWordIndex.get()==coordinateList.size()-1) currWordIndex.set(0);
-//        else currWordIndex.incrementAndGet();
     }
 
     @FXML
     void replaceAll() {
-//        codeArea.replaceText(codeArea.getText().replace(findInput.getText(), replaceInput.getText()));
+        codeArea.replaceText(codeArea.getText().replaceAll("\\b(" + findInput.getText() + ")\\b", replaceInput.getText()));
     }
 
     @FXML

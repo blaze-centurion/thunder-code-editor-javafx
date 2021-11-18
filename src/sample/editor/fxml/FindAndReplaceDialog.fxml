@@ -10,7 +10,7 @@
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
 
-<HBox fx:id="container" alignment="CENTER_LEFT" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="41.0" prefWidth="490.0" style="-fx-background-color: #21222C; -fx-border-color: #454545; -fx-border-width: 0 0 0 7px;" stylesheets="@../css/style.css" xmlns="http://javafx.com/javafx/16" xmlns:fx="http://javafx.com/fxml/1" fx:controller="sample.editor.controller.FindAndReplaceDialogController">
+<HBox fx:id="container" alignment="CENTER_LEFT" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="41.0" prefWidth="490.0" style="-fx-background-color: #21222C; -fx-border-color: #454545; -fx-border-width: 0 0 0 7px;" stylesheets="@../css/style.css" xmlns="http://javafx.com/javafx/11" xmlns:fx="http://javafx.com/fxml/1" fx:controller="sample.editor.controller.FindAndReplaceDialogController">
    <children>
       <HBox alignment="CENTER" onMouseClicked="#toggleReplace" prefHeight="41.0" prefWidth="37.0" styleClass="hover_white">
          <children>

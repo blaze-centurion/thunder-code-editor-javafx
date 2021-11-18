@@ -11,8 +11,9 @@
 <?import javafx.scene.input.KeyCodeCombination?>
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
 
-<BorderPane fx:id="borderPane" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="868.0" prefWidth="1317.0" stylesheets="@../css/style.css" xmlns="http://javafx.com/javafx/16" xmlns:fx="http://javafx.com/fxml/1" fx:controller="sample.editor.controller.EditorController">
+<BorderPane fx:id="borderPane" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="868.0" prefWidth="1317.0" stylesheets="@../css/style.css" xmlns="http://javafx.com/javafx/11" xmlns:fx="http://javafx.com/fxml/1" fx:controller="sample.editor.controller.EditorController">
    <center>
       <SplitPane fx:id="splitPane" prefHeight="200.0" prefWidth="200.0" BorderPane.alignment="CENTER">
          <items>
@@ -146,59 +147,74 @@
                   <MenuItem mnemonicParsing="false" onAction="#duplicateSelection" text="Duplicate Selection" />
             </items>
           </Menu>
+            <Menu mnemonicParsing="false" text="Run">
+               <items>
+                  <MenuItem mnemonicParsing="false" onAction="#runFile" text="Run">
+                     <accelerator>
+                        <KeyCodeCombination alt="UP" code="CONTEXT_MENU" control="DOWN" meta="UP" shift="UP" shortcut="UP" />
+                     </accelerator>
+                  </MenuItem>
+                  <MenuItem mnemonicParsing="false" text="Edit Configurations" />
+               </items>
+            </Menu>
         </menus>
       </MenuBar>
    </top>
    <bottom>
-      <HBox prefHeight="27.0" prefWidth="1317.0" style="-fx-background-color: #191A21;" BorderPane.alignment="CENTER">
+      <VBox fx:id="statusBarContainer" BorderPane.alignment="CENTER">
          <children>
-            <HBox alignment="CENTER_LEFT" prefHeight="100.0" prefWidth="200.0" HBox.hgrow="ALWAYS">
+            <HBox prefHeight="27.0" prefWidth="1317.0" style="-fx-background-color: #191A21;">
                <children>
-                  <Label text="Line:" textFill="#f5f5f5" />
-                  <Label fx:id="lineNoLabel" layoutX="25.0" layoutY="14.0" text="19" textFill="#f5f5f5">
-                     <HBox.margin>
-                        <Insets left="2.0" />
-                     </HBox.margin>
-                  </Label>
-                  <Label layoutX="25.0" layoutY="14.0" text="," textFill="#f5f5f5">
-                     <HBox.margin>
-                        <Insets left="1.0" right="2.0" />
-                     </HBox.margin>
-                  </Label>
-                  <Label layoutX="56.0" layoutY="14.0" text="Col:" textFill="#f5f5f5">
-                     <HBox.margin>
-                        <Insets right="3.0" />
-                     </HBox.margin>
-                  </Label>
-                  <Label fx:id="colNoLabel" layoutX="76.0" layoutY="14.0" text="5" textFill="#f5f5f5" />
-                  <Label fx:id="selectTextLabel" layoutX="106.0" layoutY="14.0" text="(9 selected)" textFill="#f5f5f5">
-                     <HBox.margin>
-                        <Insets left="6.0" />
-                     </HBox.margin>
-                  </Label>
+                  <HBox alignment="CENTER_LEFT" prefHeight="100.0" prefWidth="200.0" HBox.hgrow="ALWAYS">
+                     <children>
+                        <Label text="Line:" textFill="#f5f5f5" />
+                        <Label fx:id="lineNoLabel" layoutX="25.0" layoutY="14.0" text="19" textFill="#f5f5f5">
+                           <HBox.margin>
+                              <Insets left="2.0" />
+                           </HBox.margin>
+                        </Label>
+                        <Label layoutX="25.0" layoutY="14.0" text="," textFill="#f5f5f5">
+                           <HBox.margin>
+                              <Insets left="1.0" right="2.0" />
+                           </HBox.margin>
+                        </Label>
+                        <Label layoutX="56.0" layoutY="14.0" text="Col:" textFill="#f5f5f5">
+                           <HBox.margin>
+                              <Insets right="3.0" />
+                           </HBox.margin>
+                        </Label>
+                        <Label fx:id="colNoLabel" layoutX="76.0" layoutY="14.0" text="5" textFill="#f5f5f5" />
+                        <Label fx:id="selectTextLabel" layoutX="106.0" layoutY="14.0" text="(9 selected)" textFill="#f5f5f5">
+                           <HBox.margin>
+                              <Insets left="6.0" />
+                           </HBox.margin>
+                        </Label>
+                     </children>
+                     <padding>
+                        <Insets left="15.0" />
+                     </padding>
+                  </HBox>
+                  <HBox alignment="CENTER_RIGHT" layoutX="10.0" layoutY="10.0" prefHeight="100.0" prefWidth="200.0" HBox.hgrow="ALWAYS">
+                     <children>
+                        <Label text="Tab size:" textFill="WHITESMOKE" />
+                        <Label fx:id="tabSizeLabel" layoutX="615.0" layoutY="14.0" text="4" textFill="WHITESMOKE">
+                           <HBox.margin>
+                              <Insets left="3.0" />
+                           </HBox.margin>
+                        </Label>
+                        <Label fx:id="fileTypeLabel" layoutX="584.0" layoutY="14.0" text="Plaint Text" textFill="WHITESMOKE">
+                           <HBox.margin>
+                              <Insets left="10.0" />
+                           </HBox.margin>
+                        </Label>
+                     </children>
+                     <padding>
+                        <Insets left="20.0" right="20.0" />
+                     </padding>
+                  </HBox>
                </children>
-               <padding>
-                  <Insets left="15.0" />
-               </padding>
             </HBox>
-            <HBox alignment="CENTER_RIGHT" layoutX="10.0" layoutY="10.0" prefHeight="100.0" prefWidth="200.0" HBox.hgrow="ALWAYS">
-               <children>
-                  <Label text="Tab size:" textFill="WHITESMOKE" />
-                  <Label fx:id="tabSizeLabel" layoutX="615.0" layoutY="14.0" text="4" textFill="WHITESMOKE">
-                     <HBox.margin>
-                        <Insets left="3.0" />
-                     </HBox.margin>
-                  </Label>
-                  <Label fx:id="fileTypeLabel" layoutX="584.0" layoutY="14.0" text="Plaint Text" textFill="WHITESMOKE">
-                     <HBox.margin>
-                        <Insets left="10.0" />
-                     </HBox.margin>
-                  </Label>
-               </children>
-               <padding>
-                  <Insets left="20.0" right="20.0" />
-               </padding></HBox>
          </children>
-      </HBox>
+      </VBox>
    </bottom>
 </BorderPane>

@@ -33,7 +33,7 @@ public class FileIO {
         StringBuilder sb = new StringBuilder();
         try {
             BufferedReader bf = new BufferedReader(new FileReader(fileToRead));
-            String txt = "";
+            String txt;
             while ((txt = bf.readLine()) !=null) {
                 sb.append(txt).append("\n");
             }

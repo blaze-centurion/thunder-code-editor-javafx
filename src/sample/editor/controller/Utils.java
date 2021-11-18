@@ -14,16 +14,12 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class Utils {
-    private HashMap<String, String> fileAddresses;
-    private HashMap<String, String> dirAddresses;
     private File selectedFile;
     private DropDown dropDown;
     private TreeItem<String> selectTreeItem;
@@ -42,7 +38,7 @@ public class Utils {
     }
 
     public void removeHighlightedTxtInRange(int start, int end, StyleClassedTextArea currCodeArea) {
-        currCodeArea.setStyleClass(start, end, "find");
+        currCodeArea.setStyleClass(start, end, "removeFind");
     }
 
     public void highlightText(TextField textField, ArrayList<ArrayList<Integer>> coordinateList, AtomicInteger currWordIndex, StyleClassedTextArea currCodeArea) {
@@ -54,6 +50,7 @@ public class Utils {
             coordinateList.add(new ArrayList<>(Arrays.asList(matcher.start(), matcher.end())));
         }
         if (coordinateList.size()!=0) currCodeArea.getCaretSelectionBind().moveTo(coordinateList.get(0).get(0));
+        currCodeArea.requestFollowCaret();
     }
 
     public void gotoNextWord(ArrayList<ArrayList<Integer>> coordinateList, AtomicInteger currWordIndex, StyleClassedTextArea codeArea) {
@@ -98,13 +95,11 @@ public class Utils {
         fileTypes.put("md", "MarkDown");
     }
 
-    public DropDown createContextMenuForFileTree(File file, HashMap<String, String> fileAddresses, HashMap<String, String> dirAddresses, TreeItem<String> item, Stage window, StyleClassedTextArea codeArea, TreeView<String> fileTree) {
+    public DropDown createContextMenuForFileTree(File file, TreeItem<String> item, Stage window, StyleClassedTextArea codeArea, TreeView<String> fileTree) {
         this.codeArea = codeArea;
         this.fileTree = fileTree;
         this.dropDown = new DropDown();
         this.selectTreeItem = item;
-        this.fileAddresses = fileAddresses;
-        this.dirAddresses = dirAddresses;
         this.selectedFile = file;
         this.window = window;
 
@@ -148,7 +143,7 @@ public class Utils {
     }
 
     private void copyFilePath(MouseEvent mouseEvent) {
-        setContentInClipboard(fileAddresses.get(selectedFile.getName()));
+        setContentInClipboard(selectedFile.getAbsolutePath());
         dropDown.hide();
     }
 
@@ -158,7 +153,7 @@ public class Utils {
     }
 
     private void copyFolderPath(MouseEvent mouseEvent) {
-        setContentInClipboard(dirAddresses.get(selectedFile.getName()));
+        setContentInClipboard(selectedFile.getAbsolutePath());
         dropDown.hide();
     }
 
@@ -169,14 +164,8 @@ public class Utils {
 
     private void deleteFile(MouseEvent mouseEvent) {
         try {
-            if (selectedFile.isDirectory()) {
-                FileUtils.deleteDirectory(selectedFile);
-                dirAddresses.remove(selectTreeItem.getValue());
-            }
-            else if (selectedFile.isFile()){
-                Files.deleteIfExists(Path.of(selectedFile.getAbsolutePath()));
-                fileAddresses.remove(selectTreeItem.getValue());
-            }
+            if (selectedFile.isDirectory()) FileUtils.deleteDirectory(selectedFile);
+            else if (selectedFile.isFile()) Files.deleteIfExists(Path.of(selectedFile.getAbsolutePath()));
             fileTree.getRoot().getChildren().remove(selectTreeItem);
             fileTree.refresh();
             fileTree.getSelectionModel().clearSelection();
@@ -187,19 +176,19 @@ public class Utils {
     }
 
     private void renameFile(MouseEvent mouseEvent) {
-        CommandPalletDialogBox commandPalletDialogBox = new CommandPalletDialogBox(window, selectTreeItem, fileAddresses, dirAddresses);
+        CommandPalletDialogBox commandPalletDialogBox = new CommandPalletDialogBox(window, selectTreeItem);
         commandPalletDialogBox.showRenameBox(window.getX()+(codeArea.getWidth()/2), window.getY()+70, selectedFile);
         dropDown.hide();
     }
 
     private void newFile(MouseEvent mouseEvent) {
-        CommandPalletDialogBox commandPalletDialogBox = new CommandPalletDialogBox(window, selectTreeItem, fileAddresses, dirAddresses);
+        CommandPalletDialogBox commandPalletDialogBox = new CommandPalletDialogBox(window, selectTreeItem);
         commandPalletDialogBox.showNewNameBox(window.getX()+(codeArea.getWidth()/2), window.getY()+70, selectedFile, true);
         dropDown.hide();
     }
 
     private void newFolder(MouseEvent mouseEvent) {
-        CommandPalletDialogBox commandPalletDialogBox = new CommandPalletDialogBox(window, selectTreeItem, fileAddresses, dirAddresses);
+        CommandPalletDialogBox commandPalletDialogBox = new CommandPalletDialogBox(window, selectTreeItem);
         commandPalletDialogBox.showNewNameBox(window.getX()+(codeArea.getWidth()/2), window.getY()+70, selectedFile, false);
         dropDown.hide();
     }
