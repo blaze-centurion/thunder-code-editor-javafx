@@ -19,9 +19,8 @@ public class PythonKeywordHighlighter {
     };
 
     private static final String KEYWORD_PATTERN = "\\b(" + String.join("|", KEYWORDS) + ")\\b";
-    private static final String STRING_PATTERN = "\"([^\"\\\\]|\\\\.)*\"";
-    private static final String COMMENT_PATTERN = "//[^\n]*" + "|" + "/\\*(.|\\R)*?\\*/"   // for whole text processing (text blocks)
-            + "|" + "/\\*[^\\v]*" + "|" + "^\\h*\\*([^\\v]*|/)";  // for visible paragraph processing (line by line)
+    private static final String STRING_PATTERN = "\"([^\"\\\\]|\\\\.)*\"" + "|" + "'([^\"\\\\]|\\\\.)*'";
+    private static final String COMMENT_PATTERN = "#[^\n]*" + "|" + "'''(.|\\R)*?'''";   // for whole text processing (text blocks)
 
     private static final Pattern PATTERN = Pattern.compile(
             "(?<KEYWORD>" + KEYWORD_PATTERN + ")"
@@ -30,7 +29,7 @@ public class PythonKeywordHighlighter {
     );
 
     public void start(StyleClassedTextArea codeArea) {
-        codeArea.richChanges()
+        codeArea.plainTextChanges()
                 .filter(ch -> !ch.getInserted().equals(ch.getRemoved()))
                 .subscribe(change -> codeArea.setStyleSpans(0, computeHighlighting(codeArea.getText())));
     }

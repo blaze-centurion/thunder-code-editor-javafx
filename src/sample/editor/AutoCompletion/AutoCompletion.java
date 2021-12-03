@@ -1,4 +1,4 @@
-package sample.editor.controller;
+package sample.editor.AutoCompletion;
 
 import java.util.ArrayList;
 import java.util.HashMap;

@@ -1,38 +1,25 @@
 package sample.editor.Highlighter;
 
+import org.fxmisc.richtext.StyleClassedTextArea;
+import org.fxmisc.richtext.model.StyleSpans;
+import org.fxmisc.richtext.model.StyleSpansBuilder;
+
 import java.util.Collection;
 import java.util.Collections;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.fxmisc.richtext.StyleClassedTextArea;
-import org.fxmisc.richtext.model.StyleSpans;
-import org.fxmisc.richtext.model.StyleSpansBuilder;
-
-public class JavaKeywordHighlighter {
+public class CKeywordHighlighter {
     private static final String[] KEYWORDS = new String[] {
-            "abstract", "assert", "break",
-            "case", "catch", "class", "const",
-            "continue", "default", "do", "else",
-            "enum", "extends", "final", "finally",
-            "for", "goto", "if", "implements", "import",
-            "instanceof", "interface", "native",
-            "new", "package", "private", "protected", "public",
-            "return", "static", "strictfp", "super",
-            "switch", "synchronized", "this", "throw", "throws",
-            "transient", "try", "void", "volatile", "while",
-            "goto", "const"
+            "auto","break","case","char","const","continue",
+            "default","do","double","else","enum","extern",
+            "float","for","goto","if","int","long","register",
+            "return","short","signed","sizeof","static","struct",
+            "switch","typedef","union","unsigned","void","volatile",
+            "while", "#include"
     };
-//    private static final String[] DATA_TYPES = new String[] {
-//            "int", "String", "float", "double",
-//            "long", "char", "short", "boolean",
-//            "byte"
-//    };
-//    private static final String[] LITERALS = new String[] {"true", "false", "null"};
 
     private static final String KEYWORD_PATTERN = "\\b(" + String.join("|", KEYWORDS) + ")\\b";
-//    private static final String DATA_TYPE_PATTERN = "\\b(" + String.join("|", DATA_TYPES) + ")\\b";
-//    private static final String LITERALS_PATTERN = "\\b(" + String.join("|", LITERALS) + ")\\b";
     private static final String PAREN_PATTERN = "[()]";
     private static final String BRACE_PATTERN = "[{}]";
     private static final String BRACKET_PATTERN = "[\\[\\]]";

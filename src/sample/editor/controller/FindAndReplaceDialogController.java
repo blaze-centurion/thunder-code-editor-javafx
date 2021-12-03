@@ -30,11 +30,22 @@ public class FindAndReplaceDialogController {
 
     public void setPopup(Popup popup) {
         this.popup = popup;
-        popup.setOnHidden(windowEvent -> utils.removeHighlightedTxt(coordinateList, codeArea, currWordIndex));
+        popup.setOnHiding(windowEvent -> {
+            utils.removeHighlightedTxt(coordinateList, codeArea, currWordIndex);
+            /*
+            * After closing the popup dialog the color of keywords is also changed.
+            * So in order to re-highlight the syntax I am appending and deleting the text to fire plaintext change event.
+            * I think, there are some better way, but until that I am going with this one.
+            */
+            codeArea.appendText(" ");
+            int len = codeArea.getText().length();
+            codeArea.deleteText(len-1, len);
+        });
     }
 
     @FXML
     void find() {
+        if (findInput.getText().isEmpty()) return;
         utils.highlightText(findInput, coordinateList, currWordIndex, codeArea);
         if (coordinateList.size()==0) return;
         totalIndexLabel.setText(String.valueOf(coordinateList.size()));
@@ -62,12 +73,14 @@ public class FindAndReplaceDialogController {
 
     @FXML
     void replace() {
+        if (coordinateList.size()==0) return;
         codeArea.replaceText(coordinateList.get(currWordIndex.get()).get(0), coordinateList.get(currWordIndex.get()).get(1), replaceInput.getText());
         utils.highlightText(findInput, coordinateList, currWordIndex, codeArea);
     }
 
     @FXML
     void replaceAll() {
+        if (coordinateList.size()==0) return;
         codeArea.replaceText(codeArea.getText().replaceAll("\\b(" + findInput.getText() + ")\\b", replaceInput.getText()));
     }
 
@@ -83,5 +96,12 @@ public class FindAndReplaceDialogController {
             replaceBox.setTranslateY(42);
         }
         replaceBox.setVisible(!replaceBox.isVisible());
+    }
+
+    public void showReplaceBox() {
+        container.setPrefHeight(79);
+        findBox.setTranslateY(0);
+        replaceBox.setTranslateY(0);
+        replaceBox.setVisible(true);
     }
 }

@@ -13,9 +13,9 @@
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.VBox?>
 
-<BorderPane fx:id="borderPane" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="868.0" prefWidth="1317.0" stylesheets="@../css/style.css" xmlns="http://javafx.com/javafx/11" xmlns:fx="http://javafx.com/fxml/1" fx:controller="sample.editor.controller.EditorController">
+<BorderPane fx:id="borderPane" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="868.0" prefWidth="1317.0" xmlns="http://javafx.com/javafx/16" xmlns:fx="http://javafx.com/fxml/1" fx:controller="sample.editor.controller.EditorController">
    <center>
-      <SplitPane fx:id="splitPane" prefHeight="200.0" prefWidth="200.0" BorderPane.alignment="CENTER">
+      <SplitPane fx:id="splitPane" prefHeight="200.0" prefWidth="200.0" style="-fx-padding: 0;" BorderPane.alignment="CENTER">
          <items>
             <TabPane fx:id="tabPane" />
          </items></SplitPane>
@@ -66,7 +66,7 @@
                         <KeyCodeCombination alt="UP" code="F4" control="DOWN" meta="UP" shift="DOWN" shortcut="UP" />
                      </accelerator>
                   </MenuItem>
-                  <MenuItem mnemonicParsing="false" onAction="#closeWindow" text="Close Window">
+                  <MenuItem mnemonicParsing="false" onAction="#exit" text="Close Window">
                      <accelerator>
                         <KeyCodeCombination alt="DOWN" code="F4" control="UP" meta="UP" shift="DOWN" shortcut="UP" />
                      </accelerator>
@@ -147,14 +147,18 @@
                   <MenuItem mnemonicParsing="false" onAction="#duplicateSelection" text="Duplicate Selection" />
             </items>
           </Menu>
-            <Menu mnemonicParsing="false" text="Run">
+            <Menu mnemonicParsing="false" text="Tool">
                <items>
-                  <MenuItem mnemonicParsing="false" onAction="#runFile" text="Run">
+                  <MenuItem mnemonicParsing="false" onAction="#changeTheme" text="Change Color Theme">
+                     <accelerator>
+                        <KeyCodeCombination alt="UP" code="T" control="DOWN" meta="UP" shift="UP" shortcut="UP" />
+                     </accelerator>
+                  </MenuItem>
+                  <MenuItem mnemonicParsing="false" onAction="#runFile" text="Run File">
                      <accelerator>
                         <KeyCodeCombination alt="UP" code="CONTEXT_MENU" control="DOWN" meta="UP" shift="UP" shortcut="UP" />
                      </accelerator>
                   </MenuItem>
-                  <MenuItem mnemonicParsing="false" text="Edit Configurations" />
                </items>
             </Menu>
         </menus>
@@ -163,7 +167,7 @@
    <bottom>
       <VBox fx:id="statusBarContainer" BorderPane.alignment="CENTER">
          <children>
-            <HBox prefHeight="27.0" prefWidth="1317.0" style="-fx-background-color: #191A21;">
+            <HBox prefHeight="27.0" prefWidth="1317.0" styleClass="black-background">
                <children>
                   <HBox alignment="CENTER_LEFT" prefHeight="100.0" prefWidth="200.0" HBox.hgrow="ALWAYS">
                      <children>

@@ -4,6 +4,7 @@ import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.image.Image;
 import javafx.scene.text.Font;
 import javafx.stage.Stage;
 import sample.editor.controller.EditorController;
@@ -25,6 +26,8 @@ public class Editor extends Application {
         EditorController editorController = loader.getController();
         editorController.setIsToCheckHis(true);
         editorController.setMainWindow(stage);
+        stage.getIcons().add(new Image("images/logo.jpg"));
+        stage.setTitle("Thunder - Code Editor");
         stage.show();
     }
 }

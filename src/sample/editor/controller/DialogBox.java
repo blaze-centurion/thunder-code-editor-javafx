@@ -32,6 +32,7 @@ public class DialogBox {
         confirmStage.initModality(Modality.APPLICATION_MODAL);
         confirmStage.setTitle(stageTitle);
         confirmStage.setScene(scene);
+        confirmStage.setResizable(false);
         confirmStage.setOnCloseRequest(windowEvent -> btnCode = 0);
     }
 
@@ -41,7 +42,7 @@ public class DialogBox {
 
     private AnchorPane createUi() {
         AnchorPane parent = new AnchorPane();
-        parent.getStylesheets().add(String.valueOf(getClass().getResource("../css/style.css")));
+        parent.getStylesheets().add(String.valueOf(getClass().getResource("../css/dracula.css")));
         parent.setPrefWidth(397);
         parent.setPrefHeight(166);
         ImageView imageView = new ImageView(new Image("images/attention.png"));

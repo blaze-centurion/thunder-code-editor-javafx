@@ -6,9 +6,10 @@ import javafx.stage.Popup;
 public class DropDown extends Popup {
     VBox container;
 
-    public DropDown() {
+    public DropDown(String themeFile) {
         container = new VBox();
-        container.setStyle("-fx-background-color: #343746; -fx-padding: 10px 0;");
+        container.getStyleClass().add("custom-cmenu-container");
+        container.getStylesheets().add(String.valueOf(getClass().getResource(themeFile)));
         container.setPrefWidth(320);
         getContent().add(container);
         setAutoHide(true);

@@ -1,18 +1,24 @@
 package sample.editor.controller;
 
+import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
+import javafx.beans.property.BooleanProperty;
+import javafx.concurrent.Task;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
 import javafx.geometry.Bounds;
 import javafx.geometry.Orientation;
 import javafx.geometry.Pos;
+import javafx.scene.Cursor;
 import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.control.TabPane.TabDragPolicy;
 import javafx.scene.control.TabPane.TabClosingPolicy;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.scene.input.*;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
@@ -32,15 +38,14 @@ import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
-import org.mozilla.universalchardet.UniversalDetector;
+import sample.editor.AutoCompletion.AutoCompletion;
+import sample.editor.AutoCompletion.AutoCompletionWords;
 import sample.editor.Highlighter.SyntaxHighlighter;
 
 import java.io.*;
 import java.net.URL;
 import java.util.*;
 import java.util.function.IntFunction;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 public class EditorController implements Initializable {
     @FXML
@@ -54,7 +59,6 @@ public class EditorController implements Initializable {
     @FXML
     private Label lineNoLabel, colNoLabel, selectTextLabel, tabSizeLabel, fileTypeLabel;
 
-    private StyleClassedTextArea codeArea;
     private VirtualizedScrollPane virtualizedScrollPane;
     private TreeView<String> fileTree;
     private HashMap<String, String> fileTypes;
@@ -68,7 +72,8 @@ public class EditorController implements Initializable {
     private Popup autoCompletionPopup;
     private TextArea console = new TextArea();
     private ListView<String> autoCompletionList;
-    boolean a = false;
+    private String themeFile;
+    private HashMap<String, String> themeList;
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
@@ -79,18 +84,22 @@ public class EditorController implements Initializable {
         fileTree = new TreeView<>();
         fileTypes = new HashMap<>();
         fileOpened = new HashMap<>();
+        themeList = new HashMap<>();
+        themeList.put("Dracula", "../css/dracula.css");
+        themeList.put("Monokai", "../css/monokai.css");
+        themeFile = fileIO.readTheme();
         splitPane.getItems().add(0, fileTree);
         splitPane.setDividerPositions(0.2);
         SplitPane.setResizableWithParent(fileTree, false);
-        splitPane.setStyle("-fx-padding: 0;");
         utils.configureFileTypes(fileTypes);
+        borderPane.getStylesheets().add(String.valueOf(getClass().getResource(themeFile)));
 
         fileTree.getSelectionModel().selectedItemProperty().addListener((observableValue, oldVal, newVal) -> {
             if (newVal == null) return;
             File file = new File(newVal.getGraphic().getId());
 
             if (isRightClick) {
-                DropDown contextMenu = utils.createContextMenuForFileTree(file, newVal, mainWindow, getCurrCodeArea(), fileTree);
+                DropDown contextMenu = utils.createContextMenuForFileTree(file, newVal, mainWindow, getCurrCodeArea(), fileTree, themeFile);
                 Robot robot = new Robot();
                 contextMenu.show(mainWindow, robot.getMouseX(), robot.getMouseY());
                 isRightClick = false;
@@ -98,12 +107,19 @@ public class EditorController implements Initializable {
             } else if (file.isDirectory()) return;
 
             if (fileOpened.containsValue(file.getAbsolutePath())) return;
-            try {
-                if (UniversalDetector.detectCharset(file)==null) return;
-            } catch (IOException e) {
-                e.printStackTrace();
+            if (utils.isImgFile(file)) {
+                Tab tab = createNewImgTab(file);
+                tabPane.getTabs().add(tab);
+                tabPane.getSelectionModel().select(tab);
+                return;
+            } else if (utils.isBinaryFile(file)) {
+                Tab tab = createNewTabForBinaryFiles(file);
+                tabPane.getTabs().add(tab);
+                tabPane.getSelectionModel().select(tab);
+                return;
             }
-            Tab tab = createNewTabWithCodeArea(file, true);
+
+            Tab tab = createNewTabWithCodeArea(file);
             StyleClassedTextArea area = (StyleClassedTextArea) ((VirtualizedScrollPane) tab.getContent()).getContent();
             area.appendText(fileIO.readFile(file.getAbsolutePath()));
             tabPane.getTabs().add(tab);
@@ -113,7 +129,6 @@ public class EditorController implements Initializable {
         fileTree.addEventFilter(MouseEvent.MOUSE_PRESSED, event -> {
             if (event.isSecondaryButtonDown()) isRightClick = true;
         });
-
     }
 
     public void setIsToCheckHis(boolean b) {
@@ -125,7 +140,6 @@ public class EditorController implements Initializable {
         this.mainWindow.setOnCloseRequest(windowEvent -> closeWindow());
         configureEditor();
     }
-
 
     private void configureEditor() {
         if (isToCheckHis) checkHisFiles();
@@ -154,10 +168,18 @@ public class EditorController implements Initializable {
                 File file = new File(filePath != null ? filePath : "");
                 if (!file.exists() && filePath!=null) continue;
                 String fileName = (String) fileObj.get("fileName");
-                String opened = (String) fileObj.get("opened");
                 String data = (String) fileObj.get("data");
+                String contentType = (String) fileObj.get("contentType");
                 boolean saved = (boolean) fileObj.get("saved");
-                Tab tab = createNewTabForHis(fileName, filePath, opened, filePath == null ? data : fileIO.readFile(filePath), saved);
+                Tab tab;
+                if (contentType.equals("textFile")) {
+                    tab = createNewTabForHis(fileName, filePath, filePath == null ? data : fileIO.readFile(filePath));
+                } else if(contentType.equals("binaryFile")) {
+                    tab = createNewTabForBinaryFiles(file);
+                } else {
+                    tab = createNewImgTab(file);
+                }
+                if (!saved) tab.getStyleClass().add("modified");
                 tabPane.getTabs().add(tab);
                 tabPane.getSelectionModel().select(tab);
             }
@@ -170,16 +192,9 @@ public class EditorController implements Initializable {
         return (StyleClassedTextArea) ((VirtualizedScrollPane) tabPane.getSelectionModel().getSelectedItem().getContent()).getContent();
     }
 
-    private void autoIndent() {
-        final Pattern whiteSpace = Pattern.compile( "^\\s+" );
-        codeArea.addEventHandler( KeyEvent.KEY_PRESSED, KE ->
-        {
-            if ( KE.getCode() == KeyCode.ENTER ) {
-                int caretPosition = codeArea.getCaretPosition();
-                int currentParagraph = codeArea.getCurrentParagraph();
-                Matcher m0 = whiteSpace.matcher( codeArea.getParagraph( currentParagraph-1 ).getSegments().get( 0 ) );
-                if ( m0.find() ) codeArea.insertText( caretPosition, m0.group());
-            }
+    private void autoIndent(StyleClassedTextArea area) {
+        area.addEventHandler( KeyEvent.KEY_PRESSED, KE -> {
+            if ( KE.getCode() == KeyCode.ENTER && !KE.isControlDown()) utils.indent(area);
         });
     }
 
@@ -196,26 +211,13 @@ public class EditorController implements Initializable {
         });
     }
 
-    private void autoCompletion(String toSearch) {
-        StyleClassedTextArea currCodeArea = getCurrCodeArea();
+    private void autoCompletion(String toSearch, String fileName, StyleClassedTextArea currCodeArea) {
         if (toSearch.length()==0) {
             autoCompletionPopup.hide();
             return;
         }
-
-        List<String> words = List.of(
-                "abstract", "assert", "boolean", "break", "byte",
-                "case", "catch", "char", "class", "const",
-                "continue", "default", "do", "double", "else",
-                "enum", "extends", "final", "finally", "float",
-                "for", "goto", "if", "implements", "import",
-                "instanceof", "int", "interface", "long", "native",
-                "new", "package", "private", "protected", "public",
-                "return", "short", "static", "strictfp", "super",
-                "switch", "synchronized", "this", "throw", "throws",
-                "transient", "try", "void", "volatile", "while",
-                "true", "false", "String"
-        );
+        List<String> words = new AutoCompletionWords().getWords(fileName);
+        if (words==null) return;
         AutoCompletion completion = new AutoCompletion(words);
         showCompletion(completion.suggest(toSearch), currCodeArea, toSearch.length());
     }
@@ -229,7 +231,7 @@ public class EditorController implements Initializable {
         if (list.size()>0) {
             autoCompletionList = new ListView<>();
             autoCompletionList.setPrefWidth(360);
-            autoCompletionList.getStylesheets().add(String.valueOf(getClass().getResource("../css/style.css")));
+            autoCompletionList.getStylesheets().add(String.valueOf(getClass().getResource(themeFile)));
             autoCompletionList.getItems().addAll(list);
             autoCompletionList.prefHeightProperty().bind(Bindings.size(autoCompletionList.getItems()).multiply(31));
             autoCompletionList.getSelectionModel().selectFirst();
@@ -254,7 +256,7 @@ public class EditorController implements Initializable {
         }
     }
 
-    private String getCurrWord() {
+    private String getCurrWord(StyleClassedTextArea currCodeArea) {
         Set<Character> charSet = new HashSet<>();
         charSet.add('}');
         charSet.add('{');
@@ -262,7 +264,6 @@ public class EditorController implements Initializable {
         charSet.add('[');
         charSet.add(')');
         charSet.add('(');
-        StyleClassedTextArea currCodeArea = getCurrCodeArea();
         StringBuilder word = new StringBuilder();
         for (int i = currCodeArea.getCaretPosition(); i>0; i--) {
             char ch = currCodeArea.getText().charAt(i-1);
@@ -273,69 +274,65 @@ public class EditorController implements Initializable {
         return word.reverse().toString();
     }
 
-    private void configureAllShortcuts() {
+    private void configureAllShortcuts(String fileName, StyleClassedTextArea codeArea) {
         final KeyCombination copyComb = new KeyCodeCombination(KeyCode.C, KeyCombination.CONTROL_DOWN);
         final KeyCombination showCompletionComb = new KeyCodeCombination(KeyCode.SPACE, KeyCombination.CONTROL_DOWN);
+        final KeyCombination cutComb = new KeyCodeCombination(KeyCode.X, KeyCombination.CONTROL_DOWN);
+        final KeyCombination ctrlEnterComb = new KeyCodeCombination(KeyCode.ENTER, KeyCombination.CONTROL_DOWN);
         codeArea.addEventHandler(KeyEvent.KEY_RELEASED, event -> {
             if (copyComb.match(event)) {
                 copy();
+                event.consume();
             } else if (showCompletionComb.match(event)) {
-                autoCompletion(getCurrWord());
+                autoCompletion(getCurrWord(codeArea), fileName, codeArea);
+            } else if (cutComb.match(event)) {
+                cut();
+                event.consume();
+            } else if (ctrlEnterComb.match(event)) {
+                codeArea.selectLine();
+                IndexRange range = codeArea.getCaretSelectionBind().getRange();
+                codeArea.insertText(range.getEnd(), "\n");
+                utils.indent(codeArea);
             }
         });
     }
 
-    private void runCommand(String cmd) {
-        ProcessBuilder builder = new ProcessBuilder("powershell.exe", "/c", cmd);
-        builder.redirectErrorStream(true);
-        console.setText("");
-        try {
-            Process p = builder.start();
-            BufferedReader r = new BufferedReader(new InputStreamReader(p.getInputStream()));
-            String line;
-            while (true) {
-                line = r.readLine();
-                if (line == null) { break; }
-                console.appendText(line+'\n');
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    private void createCodeAreaWithLineNo(String fileName) {
+    private void createCodeAreaWithLineNo(String fileName, Tab tab) {
         /*
         * Create new textArea without any preloaded data.
         */
-        codeArea = new StyleClassedTextArea();
+        StyleClassedTextArea codeArea = new StyleClassedTextArea();
         virtualizedScrollPane = new VirtualizedScrollPane(codeArea);
         IntFunction<Node> noFactory = LineNumberFactory.get(codeArea);
         IntFunction<Node> graphicFactory = line -> {
             HBox lineBox = new HBox(noFactory.apply(line));
-            lineBox.setStyle("-fx-background-color: #282A36;");
+            lineBox.getStyleClass().add("lineno-box");
             lineBox.setAlignment(Pos.CENTER_LEFT);
             return lineBox;
         };
         UndoManager<List<PlainTextChange>> um = UndoUtils.plainTextUndoManager(codeArea);
         codeArea.setUndoManager(um);
 
-        autoIndent();  // auto-indent: insert previous line's indents on enter
+        new SyntaxHighlighter(codeArea).start(fileName);
+        autoIndent(codeArea);  // auto-indent: insert previous line's indents on enter
         autoCompleteBrackets(codeArea);
-        configureAllShortcuts();
-        codeArea.richChanges().filter(ch -> !ch.getInserted().equals(ch.getRemoved())).subscribe(x -> autoCompletion(getCurrWord()));
+        configureAllShortcuts(fileName, codeArea);
+        codeArea.richChanges().filter(ch -> !ch.getInserted().equals(ch.getRemoved())).subscribe(x -> {
+            autoCompletion(getCurrWord(codeArea), fileName, codeArea);
+            fileIO.fileModified(tab, codeArea);
+        });
 
         setSelectionListener(codeArea);
-        codeArea.caretPositionProperty().addListener((observableValue, oldPos, newPos) -> updateCaret());
-        new SyntaxHighlighter(codeArea).start(fileName);
+        codeArea.caretPositionProperty().addListener((observableValue, oldPos, newPos) -> updateCaret(codeArea));
         codeArea.setParagraphGraphicFactory(graphicFactory);
         codeArea.requestFocus();
     }
 
-    private void createCodeAreaWithLineNo(String fileName, String data) {
+    private void createCodeAreaWithLineNo(String fileName, String data, Tab tab) {
         /*
         * Create a textArea with preloaded data. This is mainly for opening the last opened files.
         */
-        codeArea = new StyleClassedTextArea();
+        StyleClassedTextArea codeArea = new StyleClassedTextArea();
         virtualizedScrollPane = new VirtualizedScrollPane(codeArea);
         new SyntaxHighlighter(codeArea).start(fileName);
 
@@ -343,7 +340,7 @@ public class EditorController implements Initializable {
         IntFunction<Node> noFactory = LineNumberFactory.get(codeArea);
         IntFunction<Node> graphicFactory = line -> {
             HBox lineBox = new HBox(noFactory.apply(line));
-            lineBox.setStyle("-fx-background-color: #282A36; -fx-padding: 0 0 0 15px;");
+            lineBox.getStyleClass().add("lineno-box");
             lineBox.setAlignment(Pos.CENTER_LEFT);
             return lineBox;
         };
@@ -351,19 +348,22 @@ public class EditorController implements Initializable {
         codeArea.setUndoManager(um);
 
         // auto-indent: insert previous line's indents on enter
-        autoIndent();
+        autoIndent(codeArea);
         autoCompleteBrackets(codeArea);
-        configureAllShortcuts();
-        codeArea.richChanges().filter(ch -> !ch.getInserted().equals(ch.getRemoved())).subscribe(x -> autoCompletion(getCurrWord()));
+        configureAllShortcuts(fileName, codeArea);
+        codeArea.richChanges().filter(ch -> !ch.getInserted().equals(ch.getRemoved())).subscribe(x -> {
+            autoCompletion(getCurrWord(codeArea), fileName, codeArea);
+            fileIO.fileModified(tab, codeArea);
+        });
 
-        codeArea.caretPositionProperty().addListener((observableValue, oldPos, newPos) -> updateCaret());
+        codeArea.caretPositionProperty().addListener((observableValue, oldPos, newPos) -> updateCaret(codeArea));
         setSelectionListener(codeArea);
         codeArea.setParagraphGraphicFactory(graphicFactory);
     }
 
-    private void updateCaret() {
-        lineNoLabel.setText(String.valueOf(getCurrCodeArea().getCaretSelectionBind().getParagraphIndex()+1));
-        colNoLabel.setText(String.valueOf(getCurrCodeArea().getCaretSelectionBind().getColumnPosition()+1));
+    private void updateCaret(StyleClassedTextArea codeArea) {
+        lineNoLabel.setText(String.valueOf(codeArea.getCaretSelectionBind().getParagraphIndex()+1));
+        colNoLabel.setText(String.valueOf(codeArea.getCaretSelectionBind().getColumnPosition()+1));
     }
 
     private void setSelectionListener(StyleClassedTextArea area) {
@@ -374,20 +374,71 @@ public class EditorController implements Initializable {
         });
     }
 
-    private Tab createNewTabWithCodeArea(boolean isFileOpen) {
+    private void createBinaryFileUi(Tab tab, File file) {
+        HBox hBox = new HBox();
+        hBox.getStyleClass().add("binary-tab-container");
+        Label label1 = new Label("The file is not displayed in the editor because it is either binary or uses an unsupported text encoding.");
+        Label label2 = new Label("Do you want to open it anyway?");
+        label1.setStyle("-fx-text-fill: #fff; -fx-font-size: 15px;");
+        label2.setStyle("-fx-text-fill: #008EFF !important; -fx-font-size: 15px; -fx-opacity: 1;");
+        label2.setCursor(Cursor.HAND);
+        label2.setOnMouseClicked(event -> {
+            String fileName = file.getName();
+            String filePath = file.getAbsolutePath();
+            createCodeAreaWithLineNo(file.getName(), fileIO.readFile(file.getAbsolutePath()), tab);
+            setFileType(fileName);
+            tab.setContent(virtualizedScrollPane);
+            tab.setId(filePath);
+            tab.setOnCloseRequest(e -> fileOpened.remove(fileName, filePath));
+        });
+        label2.setUnderline(true);
+        hBox.setSpacing(5);
+        hBox.getChildren().addAll(label1, label2);
+        tab.setContent(hBox);
+        fileOpened.put(file.getName(), file.getAbsolutePath());
+    }
+
+    private Tab createNewTabWithCodeArea() {
         /*
         * Create new tab with new file.
         */
 
         Tab tab = new Tab();
-        createCodeAreaWithLineNo("Untitled 1.txt");
+        createCodeAreaWithLineNo("Untitled 1.txt", tab);
         tab.setText("Untitled 1.txt");
         tab.setContent(virtualizedScrollPane);
-        virtualizedScrollPane.setId(String.valueOf(isFileOpen));
         return tab;
     }
 
-    private Tab createNewTabWithCodeArea(File file, boolean isFileOpen) {
+    private Tab createNewTabForBinaryFiles(File file) {
+        /*
+        * Create tab for binary files or unsupported text encoding files.
+        */
+
+        Tab tab = new Tab();
+        tab.setText(file.getName());
+        tab.setId(file.getAbsolutePath());
+        createBinaryFileUi(tab, file);
+        tab.setOnCloseRequest(event -> fileOpened.remove(file.getName(), file.getAbsolutePath()));
+        return tab;
+    }
+
+    private Tab createNewImgTab(File file) {
+        Tab tab = new Tab();
+        tab.setText(file.getName());
+        tab.setId(file.getAbsolutePath());
+        ImageView imageView = new ImageView();
+        Image image = new Image(file.toURI().toString());
+        imageView.setSmooth(true);
+        imageView.setCache(true);
+        imageView.setImage(image);
+        tab.setContent(imageView);
+        fileOpened.put(file.getName(), file.getAbsolutePath());
+        tab.setOnCloseRequest(event -> fileOpened.remove(file.getName(), file.getAbsolutePath()));
+        return tab;
+    }
+
+    private Tab createNewTabWithCodeArea(File file) {
         /*
         * Create new tab with existing file.
         */
@@ -395,10 +446,9 @@ public class EditorController implements Initializable {
         String fileName = file.getName();
         String filePath = file.getAbsolutePath();
         Tab tab = new Tab();
-        createCodeAreaWithLineNo(file.getName());
+        createCodeAreaWithLineNo(file.getName(), tab);
         tab.setText(fileName);
         setFileType(fileName);
-        virtualizedScrollPane.setId(String.valueOf(isFileOpen));
         tab.setContent(virtualizedScrollPane);
         tab.setId(filePath);
         fileOpened.put(fileName, filePath);
@@ -406,15 +456,14 @@ public class EditorController implements Initializable {
         return tab;
     }
 
-    private Tab createNewTabForHis(String fileName, String filePath, String isFileOpen, String data, boolean saved) {
+    private Tab createNewTabForHis(String fileName, String filePath, String data) {
         /*
         * Create new tab for the recent closed file.
         */
 
         Tab tab = new Tab();
-        createCodeAreaWithLineNo(fileName, data);
+        createCodeAreaWithLineNo(fileName, data, tab);
         tab.setText(fileName);
-        virtualizedScrollPane.setId(isFileOpen);
         tab.setContent(virtualizedScrollPane);
         tab.setId(filePath);
         setFileType(fileName);
@@ -428,8 +477,8 @@ public class EditorController implements Initializable {
         fileTypeLabel.setText(f!=null ? f : "Plain Text");
     }
 
-    private void newFile(File file, boolean isFileOpen) {
-        Tab tab = createNewTabWithCodeArea(file, isFileOpen);
+    private void newFile(File file) {
+        Tab tab = createNewTabWithCodeArea(file);
         setFileType(file.getName());
         tabPane.getTabs().add(tab);
         tabPane.getSelectionModel().select(tab);
@@ -447,7 +496,13 @@ public class EditorController implements Initializable {
             if (file.isDirectory()) {
                 item = new TreeItem<>(file.getName());
                 item.setGraphic(label);
-                item.getChildren().addAll(getDirContent(file));
+                item.getChildren().add(new TreeItem<>(""));
+                item.expandedProperty().addListener((observableValue) -> {
+                    TreeItem<String> i = (TreeItem<String>) ((BooleanProperty) observableValue).getBean();
+                    if (i.getChildren().get(0).getValue().length()!=0) return;
+                    i.getChildren().clear();
+                    i.getChildren().addAll(getDirContent(new File(i.getGraphic().getId())));
+                });
             } else {
                 item = new TreeItem<>(file.getName());
                 item.setGraphic(label);
@@ -462,6 +517,12 @@ public class EditorController implements Initializable {
         fileOpened.remove(oldKey);
         fileOpened.put(file.getName(), file.getAbsolutePath());
         tab.setOnCloseRequest(event -> fileOpened.remove(file.getName(), file.getAbsolutePath()));
+    }
+
+    @FXML
+    void changeTheme() {
+        CommandPalletDialogBox commandPalletDialogBox = new CommandPalletDialogBox(mainWindow, themeFile);
+        commandPalletDialogBox.showChangeThemeBox(mainWindow.getX() + (getCurrCodeArea().getWidth() / 2), mainWindow.getY() + 70, borderPane, themeList);
     }
 
     @FXML
@@ -481,7 +542,6 @@ public class EditorController implements Initializable {
         fileTree.setRoot(null);
     }
 
-    @FXML
     void closeWindow() {
         JSONObject obj = new JSONObject();  // main obj in which all data will be stored.
         JSONArray list = new JSONArray();  // it contains the data of opened file.
@@ -489,15 +549,40 @@ public class EditorController implements Initializable {
         boolean saved;
 
         for (Tab tab : tabPane.getTabs()) {
-            StyleClassedTextArea currCodeArea = (StyleClassedTextArea) ((VirtualizedScrollPane) tab.getContent()).getContent();
-            saved = fileIO.isContentSame(tab.getId(), currCodeArea.getText());
-            fileObj = new JSONObject();
-            fileObj.put("fileName", tab.getText());
-            fileObj.put("filePath", tab.getId());
-            fileObj.put("data", currCodeArea.getText());
-            fileObj.put("saved", saved);
-            fileObj.put("opened", (tab.getContent()).getId());
-            list.add(fileObj);
+            try {
+                if (tab.getContent() instanceof VirtualizedScrollPane) {
+                    StyleClassedTextArea currCodeArea = (StyleClassedTextArea) ((VirtualizedScrollPane) tab.getContent()).getContent();
+                    saved = fileIO.isContentSame(tab.getId(), currCodeArea.getText());
+                    fileObj = new JSONObject();
+                    fileObj.put("fileName", tab.getText());
+                    fileObj.put("filePath", tab.getId());
+                    fileObj.put("data", currCodeArea.getText());
+                    fileObj.put("saved", saved);
+                    fileObj.put("opened", tab.getId()!=null);
+                    fileObj.put("contentType", "textFile");
+                    list.add(fileObj);
+                } else if (tab.getContent() instanceof HBox) {
+                    fileObj = new JSONObject();
+                    fileObj.put("fileName", tab.getText());
+                    fileObj.put("filePath", tab.getId());
+                    fileObj.put("data", "");
+                    fileObj.put("saved", true);
+                    fileObj.put("opened", tab.getId()!=null);
+                    fileObj.put("contentType", "binaryFile");
+                    list.add(fileObj);
+                } else if (tab.getContent() instanceof ImageView) {
+                    fileObj = new JSONObject();
+                    fileObj.put("fileName", tab.getText());
+                    fileObj.put("filePath", tab.getId());
+                    fileObj.put("data", "");
+                    fileObj.put("saved", true);
+                    fileObj.put("opened", tab.getId()!=null);
+                    fileObj.put("contentType", "imageFile");
+                    list.add(fileObj);
+                }
+            } catch (Exception e) {
+                System.err.println(e.getMessage());
+            }
         }
         obj.put("opened folder", currFolder);
         obj.put("opened file", list);
@@ -602,7 +687,7 @@ public class EditorController implements Initializable {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("../fxml/FindAndReplaceDialog.fxml"));
             HBox container = loader.load();
             FindAndReplaceDialogController findAndReplaceDialogController = loader.getController();
-            findAndReplaceDialogController.setCodeArea(getCurrCodeArea());
+            findAndReplaceDialogController.setCodeArea(currCodeArea);
             findAndReplaceDialogController.setPopup(popup);
             popup.getContent().add(container);
             Bounds bounds = currCodeArea.localToScene(currCodeArea.getBoundsInLocal());
@@ -624,7 +709,7 @@ public class EditorController implements Initializable {
 
     @FXML
     void newFile() {
-        Tab tab = createNewTabWithCodeArea(false);
+        Tab tab = createNewTabWithCodeArea();
         tabPane.getTabs().add(tab);
         tabPane.getSelectionModel().select(tab);
     }
@@ -650,10 +735,15 @@ public class EditorController implements Initializable {
         FileChooser fileChooser = fileIO.createFileChooser();
         File file = fileChooser.showOpenDialog(null);
         if (file==null) return;
-//        if (Files.isExecutable(Path.of(file.getAbsolutePath()))) return;
+        if (utils.isBinaryFile(file)) {
+            Tab tab = createNewTabForBinaryFiles(file);
+            tabPane.getTabs().add(tab);
+            tabPane.getSelectionModel().select(tab);
+            return;
+        }
         if (fileOpened.containsValue(file.getAbsolutePath())) return;
-        newFile(file, true);
-        codeArea.appendText(fileIO.readFile(file.getAbsolutePath()));
+        newFile(file);
+        getCurrCodeArea().appendText(fileIO.readFile(file.getAbsolutePath()));
     }
 
     @FXML
@@ -668,7 +758,7 @@ public class EditorController implements Initializable {
         Label label = new Label();
         label.setId(dir.getAbsolutePath());
         rootItem.setGraphic(label);
-        rootItem.getChildren().addAll(getDirContent(dir));
+        (new Thread(() -> rootItem.getChildren().addAll(getDirContent(dir)))).start();
         rootItem.setExpanded(true);
     }
 
@@ -680,7 +770,7 @@ public class EditorController implements Initializable {
         Label label = new Label();
         label.setId(dir.getAbsolutePath());
         rootItem.setGraphic(label);
-        rootItem.getChildren().addAll(getDirContent(dir));
+        (new Thread(() -> rootItem.getChildren().addAll(getDirContent(dir)))).start();
         rootItem.setExpanded(true);
     }
 
@@ -696,7 +786,23 @@ public class EditorController implements Initializable {
 
     @FXML
     void replace() {
-
+        try {
+            StyleClassedTextArea currCodeArea = getCurrCodeArea();
+            Popup popup = new Popup();
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("../fxml/FindAndReplaceDialog.fxml"));
+            HBox container = loader.load();
+            FindAndReplaceDialogController findAndReplaceDialogController = loader.getController();
+            findAndReplaceDialogController.setCodeArea(currCodeArea);
+            findAndReplaceDialogController.setPopup(popup);
+            findAndReplaceDialogController.showReplaceBox();
+            popup.getContent().add(container);
+            Bounds bounds = currCodeArea.localToScene(currCodeArea.getBoundsInLocal());
+            popup.show(mainWindow, bounds.getMaxX(), bounds.getMinY());
+            popup.setAutoHide(false);
+            popup.setHideOnEscape(true);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     @FXML
@@ -708,14 +814,13 @@ public class EditorController implements Initializable {
         String path = currTab.getId();
         if (path==null) {
             if (askAndSaveFile(currTab)) {
-                if (!currTab.getContent().getId().equals("true")) return;
-            } else return;
+                if (currTab.getId()==null) return;
+            }
+            return;
         }
         File file = new File(path);
-        String ext = utils.getExtension(file.getName());
         statusBarContainer.getChildren().add(0, pane);
-//        if (ext.equals(".py")) runCommand("python " + file.getAbsolutePath());
-        runCommand("python.exe " + file.getAbsolutePath());
+        utils.runFile(file, console);
     }
 
     @FXML
@@ -729,21 +834,25 @@ public class EditorController implements Initializable {
     @FXML
     void saveFile() {
         Tab tab = tabPane.getSelectionModel().getSelectedItem();
-        VirtualizedScrollPane content = (VirtualizedScrollPane) tab.getContent();
-        String codeAreaText = getCurrCodeArea().getText();
-        if (content.getId().equals("true")) {
-            new FileIO().saveFile(tab.getId(), codeAreaText);
+        String path = tab.getId();
+        StyleClassedTextArea area = getCurrCodeArea();
+        String codeAreaText = area.getText();
+        if (path!=null) {
+            fileIO.saveFile(path, codeAreaText);
+            tab.getStyleClass().remove("modified");
         } else {
             File file = fileIO.saveFileAs(tab, codeAreaText);
+            new SyntaxHighlighter(area).start(file.getName());
+            area.appendText("\n");
             setFileOpened(file, tab, tab.getId());
         }
     }
 
     private void saveFile(Tab tab) {
-        VirtualizedScrollPane content = (VirtualizedScrollPane) tab.getContent();
+        String path = tab.getId();
         String codeAreaText = getCurrCodeArea().getText();
-        if (content.getId().equals("true")) {
-            new FileIO().saveFile(tab.getId(), codeAreaText);
+        if (path!=null) {
+            new FileIO().saveFile(path, codeAreaText);
         } else {
             File file = fileIO.saveFileAs(tab, codeAreaText);
             if (file!=null) setFileOpened(file, tab, tab.getId());
