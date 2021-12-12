@@ -23,6 +23,7 @@ public class CommandPalletDialogBox extends Popup {
     private TreeItem<String> selectedTreeItem;
     private String themeFile;
     private BorderPane borderPane;
+    private Function exitFunction;
 
     public CommandPalletDialogBox(Stage window, TreeItem<String> selectedTreeItem, String themeFile) {
         this.window = window;
@@ -39,8 +40,9 @@ public class CommandPalletDialogBox extends Popup {
         setHideOnEscape(true);
     }
 
-    public void showChangeThemeBox(double x, double y, BorderPane borderPane, HashMap<String, String> themeList) {
+    public void showChangeThemeBox(double x, double y, BorderPane borderPane, HashMap<String, String> themeList, Function exitFunction) {
         this.borderPane = borderPane;
+        this.exitFunction = exitFunction;
         createThemeBoxUi(themeList);
         show(window, x,y);
     }
@@ -91,19 +93,22 @@ public class CommandPalletDialogBox extends Popup {
 
     private void changeTheme(String val) {
         new FileIO().changeTheme(val);
-//        Stage stage = new Stage();
-//        try {
-//            FXMLLoader loader = new FXMLLoader(getClass().getResource("../fxml/Editor.fxml"));
-//            Parent root = loader.load();
-//            EditorController editorController = loader.getController();
-//            editorController.setIsToCheckHis(true);
-//            editorController.setMainWindow(stage);
-//            Scene scene = new Scene(root);
-//            stage.setScene(scene);
-//            stage.show();
-//        } catch (IOException e) {
-//            e.printStackTrace();
-//        }
+        exitFunction.execute();
+        this.window.close();
+        Stage stage = new Stage();
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("../fxml/Editor.fxml"));
+            Parent root = loader.load();
+            EditorController editorController = loader.getController();
+            editorController.setIsToCheckHis(true);
+            editorController.setIsThemeChanging(true);
+            editorController.setMainWindow(stage);
+            Scene scene = new Scene(root);
+            stage.setScene(scene);
+            stage.show();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     private void createRenameUi(File file) {

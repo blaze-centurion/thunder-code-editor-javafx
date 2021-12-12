@@ -74,6 +74,7 @@ public class EditorController implements Initializable {
     private ListView<String> autoCompletionList;
     private String themeFile;
     private HashMap<String, String> themeList;
+    private boolean isThemeChanging;
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
@@ -135,6 +136,10 @@ public class EditorController implements Initializable {
         isToCheckHis = b;
     }
 
+    public void setIsThemeChanging(boolean b) {
+        isThemeChanging = b;
+    }
+
     public void setMainWindow(Stage mainWindow) {
         this.mainWindow = mainWindow;
         this.mainWindow.setOnCloseRequest(windowEvent -> closeWindow());
@@ -173,7 +178,7 @@ public class EditorController implements Initializable {
                 boolean saved = (boolean) fileObj.get("saved");
                 Tab tab;
                 if (contentType.equals("textFile")) {
-                    tab = createNewTabForHis(fileName, filePath, filePath == null ? data : fileIO.readFile(filePath));
+                    tab = createNewTabForHis(fileName, filePath, filePath == null || isThemeChanging ? data : fileIO.readFile(filePath));
                 } else if(contentType.equals("binaryFile")) {
                     tab = createNewTabForBinaryFiles(file);
                 } else {
@@ -521,8 +526,14 @@ public class EditorController implements Initializable {
 
     @FXML
     void changeTheme() {
+        Function f = new Function() {
+            @Override
+            public void execute() {
+                closeWindow();
+            }
+        };
         CommandPalletDialogBox commandPalletDialogBox = new CommandPalletDialogBox(mainWindow, themeFile);
-        commandPalletDialogBox.showChangeThemeBox(mainWindow.getX() + (getCurrCodeArea().getWidth() / 2), mainWindow.getY() + 70, borderPane, themeList);
+        commandPalletDialogBox.showChangeThemeBox(mainWindow.getX() + (getCurrCodeArea().getWidth() / 2), mainWindow.getY() + 70, borderPane, themeList, f);
     }
 
     @FXML
