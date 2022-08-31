@@ -692,6 +692,7 @@ public class EditorController implements Initializable {
 
     @FXML
     void find() {
+        if (tabPane.getTabs().size()==0) return;
         try {
             StyleClassedTextArea currCodeArea = getCurrCodeArea();
             Popup popup = new Popup();
