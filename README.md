@@ -3,6 +3,7 @@
 
 Thunder is code editor completly made in javafx. This is just a practice project which focuses on main features of  a modern code editor.
 
+![demo.gif](https://github.com/blaze-centurion/thunder-code-editor-javafx/blob/master/demo.gif)
 
 ## Features
 
